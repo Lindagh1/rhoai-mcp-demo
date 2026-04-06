@@ -5,19 +5,22 @@ metadata:
 data:
   config.yaml: |
     version: '2'
-    image_name: llamastack/llama-stack:latest
+    image_name: llamastack/distribution-starter:latest
     apis:
       - inference
       - agents
+      - safety
     providers:
       inference:
         - provider_id: rhoai-maas
           provider_type: openai
           config:
-            # L'URL correcte de ton modèle
             url: "https://litellm-prod.apps.maas.redhatworkshops.io/v1"
-            # On utilise une variable d'environnement dynamique !
             api_key: "${RHOAI_API_KEY}"
+      agents:
+        - provider_id: meta-reference
+          provider_type: meta-reference
+          config: {}
     mcp_endpoints:
-      - name: jira_mock
+      - name: jira-mock
         url: "http://jira-mcp-service:8080/sse"

@@ -1,5 +1,2 @@
 streamlit>=1.30.0
-llama-stack-client>=0.0.50
-fire
-pydantic>=2.0.0
-httpx
+requests

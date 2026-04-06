@@ -1,49 +1,43 @@
 import streamlit as st
-from llama_stack_client import LlamaStackClient
-import os
+import requests
 
-# Page Configuration
 st.set_page_config(page_title="RHOAI Support Assistant", page_icon="🤖")
 st.title("🤖 Support Assistant (RHOAI v3 + MCP)")
 
-# Connexion au serveur Llama Stack via le service interne OpenShift
-# Port 5000 car c'est celui que nous avons exposé dans notre Service YAML
-client = LlamaStackClient(
-    base_url="http://llama-stack-service:5000"
-)
+# Internal OpenShift Service URL
+Llama_URL = "http://llama-stack-service:5000/v1/chat/completions"
 
-# Initialisation de l'historique de chat
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Affichage des messages
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# Entrée utilisateur
-if prompt := st.chat_input("Ask about JIRA-404, JIRA-123..."):
+if prompt := st.chat_input("How can I help you?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        response_placeholder = st.empty()
-        response_placeholder.markdown("⏳ *Querying Llama Stack...*")
+        placeholder = st.empty()
+        placeholder.markdown("⏳ *Querying Llama Stack...*")
         
         try:
-            # Appel de l'API Chat Completion (Standard RHOAI v3)
-            response = client.chat.completions.create(
-                model="meta-llama/Meta-Llama-3-8B-Instruct",
-                messages=st.session_state.messages,
-                stream=False
-            )
+            payload = {
+                "model": "meta-llama/Meta-Llama-3-8B-Instruct",
+                "messages": st.session_state.messages,
+                "stream": False
+            }
             
-            # Extraction du contenu de la réponse
-            full_response = response.choices[0].message.content
+            response = requests.post(Llama_URL, json=payload, timeout=30)
             
-            response_placeholder.markdown(full_response)
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
-            
+            if response.status_code == 200:
+                full_response = response.json()['choices'][0]['message']['content']
+                placeholder.markdown(full_response)
+                st.session_state.messages.append({"role": "assistant", "content": full_response})
+            else:
+                placeholder.error(f"Error {response.status_code}: {response.text}")
+                
         except Exception as e:
-            st.error(f"Error: {str(e)}")
+            placeholder.error(f"Connection Error: {str(e)}")
