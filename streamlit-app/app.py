@@ -1,46 +1,48 @@
 import streamlit as st
-import requests
+from llama_stack_client import LlamaStackClient
 
+# Page Config
 st.set_page_config(page_title="RHOAI Support Assistant", page_icon="🤖")
-st.title("🤖 Support Assistant (RHOAI + MCP)")
-st.markdown("Ask me about a Jira ticket, for example: **What is the status of JIRA-404?**")
+st.title("🤖 Support Assistant (RHOAI v3 + MCP)")
+
+# Initialisation du client Llama Stack
+# On pointe vers le service interne OpenShift
+client = LlamaStackClient(
+    base_url="http://llama-stack-service:5000" 
+)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# Affichage du chat
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-if prompt := st.chat_input("Enter your question here..."):
+if prompt := st.chat_input("Ask about JIRA-404, JIRA-123..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        message_placeholder = st.empty()
-        message_placeholder.markdown("⏳ *Thinking and checking Jira via MCP...*")
+        response_placeholder = st.empty()
         
         try:
-            # Voici l'URL qui a été corrigée
-            url = "http://llama-stack-service:5000/v1/chat/completions" 
+            # Utilisation de l'API Agents (plus haut niveau pour le MCP)
+            # C'est la méthode recommandée pour que l'IA utilise les outils automatiquement
+            response = client.agents.create_agent_turn(
+                agent_id="support-agent", # L'ID défini dans ta config Llama Stack
+                messages=[{
+                    "role": "user",
+                    "content": prompt
+                }],
+                stream=False
+            )
             
-            payload = {
-                "model": "meta-llama/Meta-Llama-3-8B-Instruct",
-                "messages": st.session_state.messages,
-                "stream": False 
-            }
-            
-            response = requests.post(url, json=payload)
-            
-            if response.status_code == 200:
-                data = response.json()
-                ai_response = data.get("choices", [{}])[0].get("message", {}).get("content", "Sorry, I couldn't generate a response.")
-            else:
-                ai_response = f"⚠️ Llama Stack error (HTTP {response.status_code})."
-                
-            message_placeholder.markdown(ai_response)
-            st.session_state.messages.append({"role": "assistant", "content": ai_response})
+            # Extraction propre de la réponse
+            full_response = response.output_message.content
+            response_placeholder.markdown(full_response)
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
             
         except Exception as e:
-            message_placeholder.markdown(f"❌ Connection error to Llama Stack: {str(e)}")
+            st.error(f"Error: {str(e)}")
