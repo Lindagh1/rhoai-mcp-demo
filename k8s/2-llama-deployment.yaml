@@ -1,0 +1,58 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llama-stack
+  labels:
+    app: llama-stack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: llama-stack
+  template:
+    metadata:
+      labels:
+        app: llama-stack
+    spec:
+      containers:
+      - name: llama-stack
+        image: llamastack/llama-stack:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: LLAMA_STACK_CONFIG
+          value: "/app/config/config.yaml"
+        # --- DÉBUT DE LA PARTIE SÉCURITÉ ---
+        - name: RHOAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: rhoai-api-key
+              key: api-key
+        # --- FIN DE LA PARTIE SÉCURITÉ ---
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "2"
+            memory: "2Gi"
+      volumes:
+      - name: config-volume
+        configMap:
+          name: llama-stack-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llama-stack-service
+spec:
+  selector:
+    app: llama-stack
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
