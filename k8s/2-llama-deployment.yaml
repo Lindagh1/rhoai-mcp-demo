@@ -23,23 +23,22 @@ spec:
         env:
         - name: LLAMA_STACK_CONFIG
           value: "/app/config/config.yaml"
-        # --- DÉBUT DE LA PARTIE SÉCURITÉ ---
         - name: RHOAI_API_KEY
           valueFrom:
             secretKeyRef:
               name: rhoai-api-key
               key: api-key
-        # --- FIN DE LA PARTIE SÉCURITÉ ---
         volumeMounts:
         - name: config-volume
           mountPath: /app/config
+        # Voici la partie modifiée : la boîte est beaucoup plus petite !
         resources:
           requests:
-            cpu: "500m"
-            memory: "1Gi"
+            cpu: "100m"
+            memory: "256Mi"
           limits:
-            cpu: "2"
-            memory: "2Gi"
+            cpu: "500m"
+            memory: "512Mi"
       volumes:
       - name: config-volume
         configMap:
