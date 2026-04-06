@@ -17,10 +17,9 @@ spec:
     spec:
       containers:
       - name: llama-stack
-        # ⚠️ VOICI LA CORRECTION : Le nouveau nom public officiel de l'image !
         image: llamastack/distribution-starter:latest
         ports:
-        - containerPort: 5000
+        - containerPort: 8321  # <-- CHANGEMENT ICI (le vrai port)
         env:
         - name: LLAMA_STACK_CONFIG
           value: "/app/config/config.yaml"
@@ -54,4 +53,4 @@ spec:
   ports:
     - protocol: TCP
       port: 5000
-      targetPort: 5000
+      targetPort: 8321  # <-- ET CHANGEMENT ICI (la redirection)
