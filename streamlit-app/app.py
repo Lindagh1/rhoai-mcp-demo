@@ -32,7 +32,7 @@ if prompt := st.chat_input("Ask about JIRA-404..."):
         try:
             # Standard OpenAI-compatible payload
             payload = {
-                "model": "meta-llama/Meta-Llama-3-8B-Instruct",
+                "model": "llama-scout-17b",
                 "messages": st.session_state.messages,
                 "stream": False
             }
