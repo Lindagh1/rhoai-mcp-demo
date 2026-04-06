@@ -53,4 +53,4 @@ spec:
   ports:
     - protocol: TCP
       port: 5000
-      targetPort: 8321  # <-- ET CHANGEMENT ICI (la redirection)
+      targetPort: 8321  
