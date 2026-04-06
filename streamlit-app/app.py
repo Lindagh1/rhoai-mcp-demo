@@ -1,52 +1,36 @@
 import streamlit as st
 import requests
-import json
 
-# Page Setup
-st.set_page_config(page_title="RHOAI Support Assistant", page_icon="🤖")
-st.title("🤖 Support Assistant (RHOAI v3 + MCP)")
-st.markdown("---")
+st.set_page_config(page_title="Llama Stack Debugger", page_icon="🔍")
+st.title("🔍 Llama Stack - Model Scanner")
 
-# Llama Stack Internal URL (Port 5000 from our Service)
-URL = "http://llama-stack-service:5000/v1/chat/completions"
+# L'URL standard pour lister les modèles dans Llama Stack
+MODELS_URL = "http://llama-stack-service:5000/v1/models"
 
-# Initialize Chat
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+st.info("This tool will check which models are actually registered in your Llama Stack server.")
 
-# Display history
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
-
-# User Input
-if prompt := st.chat_input("Ask about JIRA-404..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    with st.chat_message("assistant"):
-        response_placeholder = st.empty()
-        response_placeholder.markdown("⏳ *Querying Llama Stack (Standard HTTP)...*")
+if st.button("List Available Models"):
+    try:
+        # On fait une requête GET sur l'endpoint des modèles
+        response = requests.get(MODELS_URL, timeout=15)
         
-        try:
-            # Standard OpenAI-compatible payload
-            payload = {
-                "model": "llama-scout-17b",
-                "messages": st.session_state.messages,
-                "stream": False
-            }
+        if response.status_code == 200:
+            data = response.json()
+            st.success("✅ Connected to Llama Stack!")
             
-            # Simple POST request without problematic LlamaStack headers
-            response = requests.post(URL, json=payload, timeout=60)
+            # On affiche le résultat brut pour ne rien rater
+            st.write("### Internal Model Registry:")
+            st.json(data)
             
-            if response.status_code == 200:
-                data = response.json()
-                answer = data['choices'][0]['message']['content']
-                response_placeholder.markdown(answer)
-                st.session_state.messages.append({"role": "assistant", "content": answer})
+            # Petit guide pour t'aider à lire le résultat
+            if "data" in data and len(data["data"]) > 0:
+                st.balloons()
+                st.write("👉 **Look for the 'id' field.** That is the exact string you must use in your chat app.")
             else:
-                response_placeholder.error(f"❌ Server Error {response.status_code}: {response.text}")
-                
-        except Exception as e:
-            response_placeholder.error(f"⚠️ Connection Error: {str(e)}")
+                st.warning("⚠️ The list is empty. Llama Stack doesn't see any models. Check your ConfigMap indentation.")
+        else:
+            st.error(f"❌ Server returned error {response.status_code}: {response.text}")
+            
+    except Exception as e:
+        st.error(f"❌ Connection failed: {str(e)}")
+        st.write("Check if 'llama-stack-service' is reachable on port 5000.")
