@@ -17,7 +17,8 @@ spec:
     spec:
       containers:
       - name: llama-stack
-        image: llamastack/llama-stack:latest
+        # ⚠️ VOICI LA CORRECTION : Le nouveau nom public officiel de l'image !
+        image: llamastack/distribution-starter:latest
         ports:
         - containerPort: 5000
         env:
@@ -31,7 +32,6 @@ spec:
         volumeMounts:
         - name: config-volume
           mountPath: /app/config
-        # Voici la partie modifiée : la boîte est beaucoup plus petite !
         resources:
           requests:
             cpu: "100m"
